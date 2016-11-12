@@ -1,0 +1,12 @@
+net doctets              2980447251
+net dpkts                3879877
+****************
+src docktets             20890679
+src doctets fraction     0.00700924298962
+src dpkts                39352
+src dpkts fraction       0.0101425895718
+****************
+dst docktets             65318259
+dst doctets fraction     0.0219155896747
+dst dpkts                56974
+dst dpkts fraction       0.0146844861319
