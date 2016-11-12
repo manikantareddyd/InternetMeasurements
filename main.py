@@ -34,11 +34,25 @@ class InternetMeasurements:
     def print_port_summary(self):
         print("Top 10 - Sender Traffic")
         print("Port\tCounts")
-        print(self.dataframe['srcport'].value_counts()[:10])
+        src_port_bytes = {}
+        for i in range(65536): src_port_bytes[i]=0
+        data = self.dataframe
+        for i in data.index:
+            src_port_bytes[data['srcport'][i]] = src_port_bytes[data['srcport'][i]] + data['doctets'][i]
+        for w in sorted(src_port_bytes, key=src_port_bytes.get, reverse=True)[:10]:
+            print(w,'\t', src_port_bytes[w])
+    
         print("\n")
         print("Top 10 - Receiver Traffic")
         print("Port\tCounts")
-        print(self.dataframe['dstport'].value_counts()[:10])
+        dst_port_bytes = {}
+        for i in range(65536): dst_port_bytes[i]=0
+        data = self.dataframe
+        for i in data.index:
+            dst_port_bytes[data['dstport'][i]] = dst_port_bytes[data['dstport'][i]] + data['doctets'][i]
+        for w in sorted(dst_port_bytes, key=dst_port_bytes.get, reverse=True)[:10]:
+            print(w,'\t', dst_port_bytes[w])
+
 
 im = InternetMeasurements()
 # im.plot_ccdf('flow_diff')
