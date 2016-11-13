@@ -1,23 +1,35 @@
+"""
+Required function for measuring traffic
+"""
 import pandas
 import config
 import matplotlib.pyplot as plt
 import numpy as np
-import ipaddress
+import ipaddress 
 from prettytable import PrettyTable
 
 def get_ip_prefix(ip, mask):
+    """
+    """
     bi = ''.join([bin(int(x)+256)[3:] for x in ip.split('.')])
     n = bi[:mask] + '0'*(len(bi)-mask)
     ip_prefix = str(ipaddress.IPv4Address('%d.%d.%d.%d' % (int(n[:8],2),int(n[8:16],2),int(n[16:24],2),int(n[24:32],2))))
     return ip_prefix
 
 def compute_src_ip_prefix(row):
+    """
+    """
     return get_ip_prefix(row['srcaddr'],row['src_mask'])
 
 def compute_dst_ip_prefix(row):
+    """
+    """
     return get_ip_prefix(row['dstaddr'],row['dst_mask'])
 
 class TrafficMeasurements:
+    """
+        JKLOL
+    """
     def __init__(self):
         self.dataframe = pandas.read_csv(config.FLOW_RECORD_FILE)
         
