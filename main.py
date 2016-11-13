@@ -2,12 +2,12 @@ import pandas
 import config
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import norm
 
 class InternetMeasurements:
     def __init__(self):
         self.dataframe = pandas.read_csv(config.FLOW_RECORD_FILE)
         
-
     def average_packet_size(self):
         self.datadescribe = self.dataframe.describe()
         self.dataframe['flow_diff'] = self.dataframe['last'] - self.dataframe['first']
@@ -16,20 +16,24 @@ class InternetMeasurements:
         return mean_doctets/mean_dpkts
 
     def plot_ccdf(self, column):
-        column_data = np.array(self.dataframe[column].tolist())
-        column_data = column_data/column_data.sum()
-        column_cdf  = np.cumsum(column_data)
+        column_data = np.copy(self.dataframe[column].values)
+        # column_data.sort()
+        # c = norm.cdf(column_data)
+
+
+        values, base = np.histogram(column_data, bins=column_data.shape[0]//2)
+        cumulative = np.cumsum(values)/len(column_data)
 
         fig, ax = plt.subplots()
         ax.set_title(column + " CCDF")
-        ax.plot(self.dataframe.index,1-column_cdf)
+        ax.plot(base[:-1], 1-cumulative)
         fig.savefig(column + ' ccdf.png')
 
         fig, ax = plt.subplots()
         ax.set_xscale('log')
         ax.set_yscale('log')
         ax.set_title(column + " CCDF" + " - Log Scale")
-        ax.plot(self.dataframe.index,1-column_cdf)
+        ax.plot(base[:-1], 1-cumulative)
         fig.savefig(column + ' ccdf log.png')
 
     def print_port_summary(self):
@@ -88,6 +92,9 @@ class InternetMeasurements:
         
 
 im = InternetMeasurements()
-# im.plot_ccdf('flow_diff')
+im.average_packet_size()
+im.plot_ccdf('flow_diff')
+im.plot_ccdf('doctets')
+im.plot_ccdf('dpkts')
 # im.print_port_summary()
-im.get_princeton_share()
+# im.get_princeton_share()
