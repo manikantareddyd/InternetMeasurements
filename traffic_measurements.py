@@ -26,7 +26,7 @@ class TrafficMeasurements:
         self.dataframe['flow_diff'] = self.dataframe['last'] - self.dataframe['first']
         mean_dpkts = self.datadescribe['dpkts']['mean']
         mean_doctets = self.datadescribe['doctets']['mean']
-        return mean_doctets/mean_dpkts
+        print("Average packet size: ", mean_doctets/mean_dpkts, "bytes/packet")
 
     def plot_all(self):
         self.plot_ccdf('flow_diff')
