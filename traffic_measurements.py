@@ -12,10 +12,10 @@ def get_ip_prefix(ip, mask):
     return ip_prefix
 
 def compute_src_ip_prefix(row):
-            return get_ip_prefix(row['srcaddr'],row['src_mask'])
+    return get_ip_prefix(row['srcaddr'],row['src_mask'])
 
 def compute_dst_ip_prefix(row):
-            return get_ip_prefix(row['dstaddr'],row['dst_mask'])
+    return get_ip_prefix(row['dstaddr'],row['dst_mask'])
 
 class TrafficMeasurements:
     def __init__(self):
@@ -35,7 +35,7 @@ class TrafficMeasurements:
     
     def plot_ccdf(self, column):
         column_data = np.copy(self.dataframe[column].values)
-        values, base = np.histogram(column_data, bins=column_data.shape[0]//2)
+        values, base = np.histogram(column_data,bins='auto')
         cumulative = np.cumsum(values)/len(column_data)
         fig, ax = plt.subplots()
         ax.set_title(column + ' CCDF')

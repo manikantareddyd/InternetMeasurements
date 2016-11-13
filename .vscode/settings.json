@@ -6,6 +6,7 @@
         "**/.hg": true,
         "**/.DS_Store": true,
         "**/venv":true,
-        "**/__pycache__":true
+        "**/__pycache__":true,
+        "**/.vscode":true,
     }
 }
