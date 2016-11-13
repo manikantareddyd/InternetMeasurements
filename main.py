@@ -2,7 +2,13 @@ import pandas
 import config
 import matplotlib.pyplot as plt
 import numpy as np
-from prettytable import PrettyTable
+import ipaddress
+
+def get_ip_prefix(ip, mask):
+    bi = ''.join([bin(int(x)+256)[3:] for x in ip.split('.')])
+    n = bi[:mask] + '0'*(len(bi)-mask)
+    ip_prefix = str(ipaddress.IPv4Address('%d.%d.%d.%d' % (int(n[:8],2),int(n[8:16],2),int(n[16:24],2),int(n[24:32],2))))
+    return ip_prefix
 
 class InternetMeasurements:
     def __init__(self):
@@ -21,46 +27,31 @@ class InternetMeasurements:
         cumulative = np.cumsum(values)/len(column_data)
 
         fig, ax = plt.subplots()
-        ax.set_title(column + " CCDF")
+        ax.set_title(column + ' CCDF')
         ax.plot(base[:-1], 1-cumulative)
         fig.savefig(column + ' ccdf.png')
 
         fig, ax = plt.subplots()
         ax.set_xscale('log')
         ax.set_yscale('log')
-        ax.set_title(column + " CCDF" + " - Log Scale")
+        ax.set_title(column + ' CCDF' + ' - Log Scale')
         ax.plot(base[:-1], 1-cumulative)
         fig.savefig(column + ' ccdf log.png')
 
     def print_port_summary(self):
-        print("Top 10 - Sender Traffic")
-        x = PrettyTable(["Port", "%Bytes", "Times"])
-        src_port_bytes = {}
-        src_port_count = {}
-        dst_port_bytes = {}
-        dst_port_count = {}
-        for i in range(65536): 
-            src_port_bytes[i]=0
-            src_port_count[i]=0
-        for i in range(65536): 
-            dst_port_bytes[i]=0
-            dst_port_count[i]=0
-        data = self.dataframe
-        for i in data.index:
-            src_port_bytes[data['srcport'][i]] = src_port_bytes[data['srcport'][i]] + data['doctets'][i]
-            src_port_count[data['srcport'][i]] = src_port_count[data['srcport'][i]] + 1
-            dst_port_bytes[data['dstport'][i]] = dst_port_bytes[data['dstport'][i]] + data['doctets'][i]
-            dst_port_count[data['dstport'][i]] = dst_port_count[data['dstport'][i]] + 1
-        for w in sorted(src_port_bytes, key=src_port_bytes.get, reverse=True)[:10]:
-            x.add_row([w, 100*src_port_bytes[w]/data['srcport'].sum(), src_port_count[w]])
-        print(x)
-        print("\n")
-        print("Top 10 - Receiver Traffic")
-        y = PrettyTable(["Port", "%Bytes", "Times"])
-        for w in sorted(dst_port_bytes, key=dst_port_bytes.get, reverse=True)[:10]:
-            y.add_row([w, 100*dst_port_bytes[w]/data['dstport'].sum(), dst_port_count[w]])
-        print(y)
+        data = self.dataframe[['srcport','dstport','doctets']].copy()
         
+        print('Top 10 - Sender Traffic')
+        src_port_grouped = data.groupby('srcport').sum()
+        sorted_src_port_grouped = src_port_grouped.sort_values(by='doctets',ascending=False)
+        sorted_src_port_grouped['doctets'] = 100*sorted_src_port_grouped['doctets']/data['doctets'].sum()
+        print(sorted_src_port_grouped[['doctets']][:10])
+        print('\n')
+        print('Top 10 - Receiver Traffic')
+        dst_port_grouped = data.groupby('dstport').sum()
+        sorted_dst_port_grouped = dst_port_grouped.sort_values(by='doctets',ascending=False)
+        sorted_dst_port_grouped['doctets'] = 100*sorted_dst_port_grouped['doctets']/data['doctets'].sum()
+        print(sorted_dst_port_grouped[['doctets']][:10])
 
     def get_princeton_share(self):
         data = self.dataframe
@@ -94,11 +85,23 @@ class InternetMeasurements:
         print('dst dpkts\t',dst_dpkts)
         print('dst dpkts fraction\t',dst_dpkts/net_dpkts)
         
+    def aggregate_ip_prefix_traffic(self):
+        def compute_ip_prefix(row):
+            return get_ip_prefix(row['srcaddr'],row['src_mask'])
+        data = self.dataframe[['srcaddr','src_mask','doctets']].copy()
+        data['doctets'] = 100*data['doctets']/data['doctets'].sum()
+        data['ip_prefix'] = data.apply(compute_ip_prefix, axis=1)
+        data.drop('src_mask',1)
+        data.drop('srcaddr',1)
+        ip_prefix_group = data.groupby('ip_prefix').sum()
+        ip_prefix_group = ip_prefix_group.sort_values(by='doctets',ascending=False)
+        print(ip_prefix_group[['doctets']][:10])
 
 im = InternetMeasurements()
-im.average_packet_size()
-im.plot_ccdf('flow_diff')
-im.plot_ccdf('doctets')
-im.plot_ccdf('dpkts')
-im.print_port_summary()
+# im.average_packet_size()
+# im.plot_ccdf('flow_diff')
+# im.plot_ccdf('doctets')
+# im.plot_ccdf('dpkts')
+# im.print_port_summary()
+im.aggregate_ip_prefix_traffic()
 # im.get_princeton_share()
