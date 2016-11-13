@@ -2,7 +2,7 @@ import pandas
 import config
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import norm
+from prettytable import PrettyTable
 
 class InternetMeasurements:
     def __init__(self):
@@ -17,10 +17,6 @@ class InternetMeasurements:
 
     def plot_ccdf(self, column):
         column_data = np.copy(self.dataframe[column].values)
-        # column_data.sort()
-        # c = norm.cdf(column_data)
-
-
         values, base = np.histogram(column_data, bins=column_data.shape[0]//2)
         cumulative = np.cumsum(values)/len(column_data)
 
@@ -38,25 +34,33 @@ class InternetMeasurements:
 
     def print_port_summary(self):
         print("Top 10 - Sender Traffic")
-        print("Port\tCounts")
+        x = PrettyTable(["Port", "%Bytes", "Times"])
         src_port_bytes = {}
-        for i in range(65536): src_port_bytes[i]=0
+        src_port_count = {}
+        dst_port_bytes = {}
+        dst_port_count = {}
+        for i in range(65536): 
+            src_port_bytes[i]=0
+            src_port_count[i]=0
+        for i in range(65536): 
+            dst_port_bytes[i]=0
+            dst_port_count[i]=0
         data = self.dataframe
         for i in data.index:
             src_port_bytes[data['srcport'][i]] = src_port_bytes[data['srcport'][i]] + data['doctets'][i]
+            src_port_count[data['srcport'][i]] = src_port_count[data['srcport'][i]] + 1
+            dst_port_bytes[data['dstport'][i]] = dst_port_bytes[data['dstport'][i]] + data['doctets'][i]
+            dst_port_count[data['dstport'][i]] = dst_port_count[data['dstport'][i]] + 1
         for w in sorted(src_port_bytes, key=src_port_bytes.get, reverse=True)[:10]:
-            print(w,'\t', src_port_bytes[w])
-    
+            x.add_row([w, 100*src_port_bytes[w]/data['srcport'].sum(), src_port_count[w]])
+        print(x)
         print("\n")
         print("Top 10 - Receiver Traffic")
-        print("Port\tCounts")
-        dst_port_bytes = {}
-        for i in range(65536): dst_port_bytes[i]=0
-        data = self.dataframe
-        for i in data.index:
-            dst_port_bytes[data['dstport'][i]] = dst_port_bytes[data['dstport'][i]] + data['doctets'][i]
+        y = PrettyTable(["Port", "%Bytes", "Times"])
         for w in sorted(dst_port_bytes, key=dst_port_bytes.get, reverse=True)[:10]:
-            print(w,'\t', dst_port_bytes[w])
+            y.add_row([w, 100*dst_port_bytes[w]/data['dstport'].sum(), dst_port_count[w]])
+        print(y)
+        
 
     def get_princeton_share(self):
         data = self.dataframe
@@ -96,5 +100,5 @@ im.average_packet_size()
 im.plot_ccdf('flow_diff')
 im.plot_ccdf('doctets')
 im.plot_ccdf('dpkts')
-# im.print_port_summary()
+im.print_port_summary()
 # im.get_princeton_share()
