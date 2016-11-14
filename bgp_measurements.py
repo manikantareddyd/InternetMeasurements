@@ -71,13 +71,13 @@ class BGPMeasurements:
             
     def compute_no_update_fraction(self):
         self.compute_prefix_fractions()
-        x = PrettyTable(["Session","0 update fraction"])
+        x = PrettyTable(["Session","0 update Prefixes", "Total Prefixes", "% Fraction"])
         for session in self.sessions:
             zero_count = 0
-            for tup in self.prefix_list.items():
-                if tup[1] == 0:
+            for prefix in self.prefix_list[session]:
+                if self.prefix_list[session][prefix] != 0:
                     zero_count += 1
-            x.add_row([session,zero_count])
+            x.add_row([session,zero_count,len(self.prefix_list[session]),100*zero_count/len(self.prefix_list[session])])
         print(x)
 a = BGPMeasurements()
 a.compute_no_update_fraction()

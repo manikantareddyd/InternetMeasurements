@@ -93,5 +93,5 @@ class TrafficMeasurements:
         data.drop('src_mask',1)
         data.drop('srcaddr',1)
         ip_prefix_group = data.groupby('ip_prefix').sum()
-        ip_prefix_group = ip_prefix_group.sort_values(by='doctets',ascending=False)
-        print(ip_prefix_group[['doctets']][:10])
+        self.ip_prefix_group = ip_prefix_group.sort_values(by='doctets',ascending=False)
+        print(self.ip_prefix_group[['doctets']][:10])
