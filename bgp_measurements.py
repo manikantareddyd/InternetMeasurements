@@ -107,7 +107,7 @@ class BGPMeasurements:
                 if self.prefix_list[session][prefix] != 0:
                     zero_count += 1
             total_prefixes = len(self.prefix_list[session])
-            fraction = 100*zero_count/total_prefixes
+            fraction =100 - 100*zero_count/total_prefixes
             x.add_row([
                 session,
                 zero_count,

@@ -33,7 +33,11 @@ class TrafficMeasurements:
         self.datadescribe = self.dataframe.describe()
         mean_dpkts = self.datadescribe['dpkts']['mean']
         mean_doctets = self.datadescribe['doctets']['mean']
-        print("Average packet size: ", mean_doctets/mean_dpkts, "bytes/packet")
+        print(
+            "Average packet size: ", 
+            mean_doctets/mean_dpkts, 
+            "bytes/packet"
+            )
 
     def plot_all(self):
         self.plot_ccdf('flow_diff')
@@ -56,7 +60,11 @@ class TrafficMeasurements:
         fig.savefig('plots/' + column + ' ccdf log.png')
 
     def print_port_summary(self):
-        data = self.dataframe[['srcport','dstport','doctets']].copy()
+        data = self.dataframe[[
+            'srcport',
+            'dstport',
+            'doctets'
+            ]].copy()
         print('Top 10 - Sender Traffic')
         src_port_grouped = data.groupby('srcport').sum()
         sorted_src_port_grouped = src_port_grouped.sort_values(by='doctets',ascending=False)
@@ -136,7 +144,3 @@ class TrafficMeasurements:
         x.add_row(["1%",top_1_0])
         x.add_row(["10%",top_10_0])
         print(x)
-
-a=TrafficMeasurements()
-# a.print_port_summary()
-a.aggregate_ip_prefix_traffic()
