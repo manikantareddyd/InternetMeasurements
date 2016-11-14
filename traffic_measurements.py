@@ -8,7 +8,14 @@ from prettytable import PrettyTable
 def get_ip_prefix(ip, mask):
     bi = ''.join([bin(int(x)+256)[3:] for x in ip.split('.')])
     n = bi[:mask] + '0'*(len(bi)-mask)
-    ip_prefix = str(ipaddress.IPv4Address('%d.%d.%d.%d' % (int(n[:8],2),int(n[8:16],2),int(n[16:24],2),int(n[24:32],2))))
+    ip_prefix = str(
+        ipaddress.IPv4Address(
+            '%d.%d.%d.%d' % 
+            (int(n[:8],2),
+            int(n[8:16],2),
+            int(n[16:24],2),
+            int(n[24:32],2)
+            )))
     return ip_prefix
 
 def compute_src_ip_prefix(row):
@@ -20,10 +27,10 @@ def compute_dst_ip_prefix(row):
 class TrafficMeasurements:
     def __init__(self):
         self.dataframe = pandas.read_csv(config.FLOW_RECORD_FILE)
+        self.dataframe['flow_diff'] = self.dataframe['last'] - self.dataframe['first']
         
     def average_packet_size(self):
         self.datadescribe = self.dataframe.describe()
-        self.dataframe['flow_diff'] = self.dataframe['last'] - self.dataframe['first']
         mean_dpkts = self.datadescribe['dpkts']['mean']
         mean_doctets = self.datadescribe['doctets']['mean']
         print("Average packet size: ", mean_doctets/mean_dpkts, "bytes/packet")
@@ -54,14 +61,26 @@ class TrafficMeasurements:
         src_port_grouped = data.groupby('srcport').sum()
         sorted_src_port_grouped = src_port_grouped.sort_values(by='doctets',ascending=False)
         sorted_src_port_grouped['doctets'] = 100*sorted_src_port_grouped['doctets']/data['doctets'].sum()
-        print(sorted_src_port_grouped[['doctets']][:10])
+        index = 0
+        x = PrettyTable(["Port","% Traffic (doctets)"])
+        for row in sorted_src_port_grouped.itertuples():
+            if index >= 10: break
+            x.add_row([row[0],row[2]])
+            index +=1
+        print(x)
         print('\n')
         print('Top 10 - Receiver Traffic')
         dst_port_grouped = data.groupby('dstport').sum()
         sorted_dst_port_grouped = dst_port_grouped.sort_values(by='doctets',ascending=False)
         sorted_dst_port_grouped['doctets'] = 100*sorted_dst_port_grouped['doctets']/data['doctets'].sum()
-        print(sorted_dst_port_grouped[['doctets']][:10])
-
+        index = 0
+        x = PrettyTable(["Port","% Traffic (doctets)"])
+        for row in sorted_dst_port_grouped.itertuples():
+            if index >= 10: break
+            x.add_row([row[0],row[2]])
+            index +=1
+        print(x)
+        
     def get_princeton_share(self):
         data = self.dataframe[['srcaddr','src_mask','dstaddr','dst_mask','doctets','dpkts']].copy()
         data['doctets'] = 100*data['doctets']/data['doctets'].sum()
@@ -90,8 +109,34 @@ class TrafficMeasurements:
         data = self.dataframe[['srcaddr','src_mask','doctets']].copy()
         data['doctets'] = 100*data['doctets']/data['doctets'].sum()
         data['ip_prefix'] = data.apply(compute_src_ip_prefix, axis=1)
-        data.drop('src_mask',1)
-        data.drop('srcaddr',1)
         ip_prefix_group = data.groupby('ip_prefix').sum()
         self.ip_prefix_group = ip_prefix_group.sort_values(by='doctets',ascending=False)
-        print(self.ip_prefix_group[['doctets']][:10])
+        print("IP Prefix Summary")
+        x = PrettyTable(["Prefix","% Traffic (doctets)"])
+        index = 0
+        for row in self.ip_prefix_group.itertuples():
+            if index >= 10: break
+            x.add_row([row[0],row[2]])
+            index +=1
+        print(x)
+        fraction_list = np.array(self.ip_prefix_group['doctets'])
+        without_0 = fraction_list[1:].sum()
+        _0_1 = int(len(fraction_list)*0.1/100)
+        _1_0 = int(len(fraction_list)*1/100)
+        _10_0 = int(len(fraction_list)*10/100)
+        top_0_1 = fraction_list[1:_0_1+1].sum()
+        top_0_1 = 100*top_0_1/without_0
+        top_1_0 = fraction_list[1:_1_0+1].sum()
+        top_1_0 = 100*top_1_0/without_0
+        top_10_0 = fraction_list[1:_10_0+1].sum()
+        top_10_0 = 100*top_10_0/without_0
+        print("\nSummary without prefix 0")
+        x = PrettyTable(["Top Prefixes","Traffic %"])
+        x.add_row(["0.1%",top_0_1])
+        x.add_row(["1%",top_1_0])
+        x.add_row(["10%",top_10_0])
+        print(x)
+
+a=TrafficMeasurements()
+# a.print_port_summary()
+a.aggregate_ip_prefix_traffic()
